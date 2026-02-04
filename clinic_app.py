@@ -3,9 +3,6 @@ from datetime import date as dt_date, time as dt_time
 import sqlite3
 import pandas as pd
 
-# ================= التاريخ الحالي =================
-TODAY = dt_date.today()
-
 # ================= قاعدة البيانات =================
 conn = sqlite3.connect("clinic_bookings.db", check_same_thread=False)
 c = conn.cursor()
@@ -96,24 +93,18 @@ elif menu == "حجز موعد":
         "الخدمة",
         ["استشارة باطنة", "متابعة سكر", "تحاليل وفحوصات"]
     )
-
     date_selected = st.date_input(
         "التاريخ",
-        value=TODAY,
-        min_value=TODAY
+        min_value=dt_date.today()
     )
-
     time_selected = st.time_input("الوقت")
 
     if st.button("حجز الآن"):
-
-        # 🔒 قفل نهائي للأيام الماضية
-        if date_selected < TODAY:
-            st.error("❌ لا يمكن الحجز في أيام ماضية")
-            st.stop()
-
         if not name.strip() or not phone.strip():
             st.error("❌ من فضلك اكمل جميع البيانات")
+
+        elif date_selected < dt_date.today():
+            st.error("❌ لا يمكن الحجز في أيام ماضية")
 
         elif not (dt_time(16, 0) <= time_selected <= dt_time(21, 0)):
             st.error("❌ الحجز من 4 العصر حتى 9 مساءً")
