@@ -97,7 +97,8 @@ if menu == "الرئيسية":
         st.markdown("<div class='box'>مرحبا بك في عيادتنا 💚</div>", unsafe_allow_html=True)
         st.markdown("<div class='box'>احجز الآن لتحصل على أفضل رعاية صحية!</div>", unsafe_allow_html=True)
     with col2:
-        st.image("https://images.unsplash.com/photo-1588776814546-5b67dbbf0b03?auto=format&fit=crop&w=700&q=80", use_column_width=True)
+        # تأكد أن الصورة موجودة في نفس فولدر المشروع باسم clinic.jpg
+        st.image("clinic.jpg", use_column_width=True)
 
 # ---------------- حجز موعد ----------------
 elif menu == "حجز موعد":
