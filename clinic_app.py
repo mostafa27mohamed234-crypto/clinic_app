@@ -105,17 +105,26 @@ elif menu == "حجز موعد":
     time_selected = st.time_input("الوقت")
 
     if st.button("حجز الآن"):
-        if not name or not phone:
-            st.error("من فضلك اكمل البيانات")
+        # تحقق من اكتمال البيانات
+        if not name.strip() or not phone.strip():
+            st.error("من فضلك اكمل جميع البيانات")
+        # منع الحجز للأيام الماضية
+        elif date_selected < dt_date.today():
+            st.error("لا يمكن الحجز لأيام مضت")
+        # التحقق من الوقت
         elif not (dt_time(16,0) <= time_selected <= dt_time(21,0)):
             st.error("الحجز من 4 العصر لـ 9 مساءً")
         else:
+            # تحقق من وجود موعد محجوز بالفعل
             c.execute("SELECT * FROM bookings WHERE date=? AND time=?", (str(date_selected), str(time_selected)))
             if c.fetchone():
-                st.error("المعاد ده محجوز")
+                st.error("المعاد ده محجوز بالفعل")
             else:
-                c.execute("INSERT INTO bookings (name, phone, service, date, time) VALUES (?,?,?,?,?)",
-                          (name, phone, service, str(date_selected), str(time_selected)))
+                # إدخال الحجز في قاعدة البيانات
+                c.execute(
+                    "INSERT INTO bookings (name, phone, service, date, time) VALUES (?,?,?,?,?)",
+                    (name, phone, service, str(date_selected), str(time_selected))
+                )
                 conn.commit()
                 st.success("✅ تم الحجز بنجاح")
 
@@ -125,7 +134,7 @@ elif menu == "عرض الحجوزات":
     if password == "admin123":
         c.execute("SELECT * FROM bookings ORDER BY date, time")
         rows = c.fetchall()
-        if rows and len(rows[0]) == 6:  # تحقق من عدد الأعمدة قبل إنشاء DataFrame
+        if rows and len(rows[0]) == 6:  # تحقق من عدد الأعمدة
             df = pd.DataFrame(rows, columns=["ID","الاسم","الهاتف","الخدمة","التاريخ","الوقت"])
             df = df.drop(columns=["ID"])
             st.markdown("<div class='service-table'>"+df.to_html(index=False, escape=False)+"</div>", unsafe_allow_html=True)
