@@ -1,12 +1,11 @@
 import streamlit as st
 from datetime import datetime, date as dt_date, time as dt_time
 import sqlite3
-import streamlit.components.v1 as components
+import pandas as pd
 
 # ---------------- إعداد قاعدة البيانات ----------------
 conn = sqlite3.connect("clinic_bookings.db", check_same_thread=False)
 c = conn.cursor()
-
 c.execute('''
 CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,16 +61,23 @@ st.markdown("""
     text-align:center;
     box-shadow: 5px 5px 20px #000000;
 }
-.service-box {
+.service-table {
+    background: #1E1E2F;
     border-radius: 15px;
-    padding: 15px;
+    padding: 10px;
     margin: 10px auto;
-    max-width: 700px;
-    font-size:20px;
-    font-weight:bold;
-    color:#FFFFFF;
-    text-align:center;
-    box-shadow: 3px 3px 15px #000000;
+    max-width: 900px;
+    color: #FFFFFF;
+}
+th {
+    background-color: #6A5ACD;
+    color: white;
+    padding: 8px;
+    text-align: center;
+}
+td {
+    text-align: center;
+    padding: 8px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -86,19 +92,16 @@ menu = st.sidebar.selectbox("القائمة", ["الرئيسية", "حجز مو�
 
 # ---------------- الرئيسية ----------------
 if menu == "الرئيسية":
-    st.markdown("<div class='box'>احجز الآن لتحصل على أفضل رعاية صحية 💚</div>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("<div class='box'>مرحبا بك في عيادتنا 💚</div>", unsafe_allow_html=True)
+        st.markdown("<div class='box'>احجز الآن لتحصل على أفضل رعاية صحية!</div>", unsafe_allow_html=True)
+    with col2:
+        st.image("https://images.unsplash.com/photo-1588776814546-5b67dbbf0b03?auto=format&fit=crop&w=700&q=80", use_column_width=True)
 
 # ---------------- حجز موعد ----------------
 elif menu == "حجز موعد":
     st.header("📅 حجز موعد")
-
-    components.html("""
-    <form autocomplete="off">
-        <input name="name" autocomplete="off">
-        <input name="phone" autocomplete="off">
-    </form>
-    """, height=0)
-
     name = st.text_input("الاسم", key="name_clean")
     phone = st.text_input("رقم الهاتف", key="phone_clean")
     service = st.selectbox("الخدمة", ["استشارة باطنة", "متابعة سكر", "تحاليل وفحوصات"])
@@ -122,21 +125,13 @@ elif menu == "حجز موعد":
 
 # ---------------- عرض الحجوزات ----------------
 elif menu == "عرض الحجوزات":
-    components.html("""
-    <form autocomplete="off">
-        <input name="password" autocomplete="off">
-    </form>
-    """, height=0)
-
     password = st.text_input("كلمة المرور", type="password", key="pass_clean")
-
     if password == "admin123":
         c.execute("SELECT * FROM bookings ORDER BY date, time")
         rows = c.fetchall()
-
         if rows:
-            for r in rows:
-                color = "#6A5ACD" if r[3] == "استشارة باطنة" else "#20B2AA" if r[3] == "متابعة سكر" else "#FF4500"
-                st.markdown(f"<div class='service-box' style='background:{color}'>{r[1]} | {r[2]} | {r[3]} | {r[4]} | {r[5]}</div>", unsafe_allow_html=True)
+            df = pd.DataFrame(rows, columns=["ID","الاسم","الهاتف","الخدمة","التاريخ","الوقت"])
+            df = df.drop(columns=["ID"])
+            st.markdown("<div class='service-table'>"+df.to_html(index=False, escape=False)+"</div>", unsafe_allow_html=True)
         else:
-            st.info("لا توجد حجوزات")
+            st.info("لا توجد حجوزات حتى الآن")
