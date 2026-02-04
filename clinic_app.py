@@ -92,13 +92,8 @@ menu = st.sidebar.selectbox("القائمة", ["الرئيسية", "حجز مو�
 
 # ---------------- الرئيسية ----------------
 if menu == "الرئيسية":
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("<div class='box'>مرحبا بك في عيادتنا 💚</div>", unsafe_allow_html=True)
-        st.markdown("<div class='box'>احجز الآن لتحصل على أفضل رعاية صحية!</div>", unsafe_allow_html=True)
-    with col2:
-        # استخدم صورة أونلاين آمنة بدل الصورة المحلية
-        st.image("https://images.unsplash.com/photo-1588776814546-5b67dbbf0b03?auto=format&fit=crop&w=700&q=80", use_column_width=True)
+    st.markdown("<div class='box'>مرحبا بك في عيادتنا 💚</div>", unsafe_allow_html=True)
+    st.markdown("<div class='box'>احجز الآن لتحصل على أفضل رعاية صحية!</div>", unsafe_allow_html=True)
 
 # ---------------- حجز موعد ----------------
 elif menu == "حجز موعد":
@@ -130,7 +125,7 @@ elif menu == "عرض الحجوزات":
     if password == "admin123":
         c.execute("SELECT * FROM bookings ORDER BY date, time")
         rows = c.fetchall()
-        if rows:
+        if rows and len(rows[0]) == 6:  # تحقق من عدد الأعمدة قبل إنشاء DataFrame
             df = pd.DataFrame(rows, columns=["ID","الاسم","الهاتف","الخدمة","التاريخ","الوقت"])
             df = df.drop(columns=["ID"])
             st.markdown("<div class='service-table'>"+df.to_html(index=False, escape=False)+"</div>", unsafe_allow_html=True)
