@@ -1,7 +1,11 @@
 import streamlit as st
-from datetime import date as dt_date, time as dt_time
+from datetime import datetime, date, time
 import sqlite3
 import pandas as pd
+
+# ================= الوقت الحقيقي =================
+NOW = datetime.now()
+TODAY = NOW.date()
 
 # ================= قاعدة البيانات =================
 conn = sqlite3.connect("clinic_bookings.db", check_same_thread=False)
@@ -10,8 +14,8 @@ c = conn.cursor()
 c.execute("""
 CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    phone TEXT,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
     service TEXT,
     date TEXT,
     time TEXT
@@ -19,7 +23,7 @@ CREATE TABLE IF NOT EXISTS bookings (
 """)
 conn.commit()
 
-# ================= إعداد الصفحة =================
+# ================= الصفحة =================
 st.set_page_config(
     page_title="عيادة الدكتورة ياسمين عبدالرحمن",
     layout="wide"
@@ -71,10 +75,7 @@ st.markdown("<div class='subheader'>أخصائي الباطنة والسكر</di
 st.markdown("<div class='info'>📍 سرس الليان - كوبرى المرور<br>📞 01111077824</div>", unsafe_allow_html=True)
 
 # ================= القائمة =================
-menu = st.sidebar.selectbox(
-    "القائمة",
-    ["الرئيسية", "حجز موعد", "عرض الحجوزات"]
-)
+menu = st.sidebar.selectbox("القائمة", ["الرئيسية", "حجز موعد", "عرض الحجوزات"])
 
 # ================= الرئيسية =================
 if menu == "الرئيسية":
@@ -89,50 +90,64 @@ elif menu == "حجز موعد":
 
     name = st.text_input("الاسم")
     phone = st.text_input("رقم الهاتف")
-    service = st.selectbox(
-        "الخدمة",
-        ["استشارة باطنة", "متابعة سكر", "تحاليل وفحوصات"]
-    )
+    service = st.selectbox("الخدمة", ["استشارة باطنة", "متابعة سكر", "تحاليل وفحوصات"])
+
+    # 🔒 قفل UI
     date_selected = st.date_input(
         "التاريخ",
-        min_value=dt_date.today()
+        value=TODAY,
+        min_value=TODAY
     )
+
     time_selected = st.time_input("الوقت")
 
-    if st.button("حجز الآن"):
+    submit = st.button("حجز الآن")
+
+    if submit:
+        # 🔒 قفل نهائي (Server-side)
+        real_today = datetime.now().date()
+
+        if date_selected < real_today:
+            st.error("❌ لا يمكن الحجز في أيام ماضية")
+            st.stop()
+
         if not name.strip() or not phone.strip():
             st.error("❌ من فضلك اكمل جميع البيانات")
+            st.stop()
 
-        elif date_selected < dt_date.today():
-            st.error("❌ لا يمكن الحجز في أيام ماضية")
-
-        elif not (dt_time(16, 0) <= time_selected <= dt_time(21, 0)):
+        if not (time(16, 0) <= time_selected <= time(21, 0)):
             st.error("❌ الحجز من 4 العصر حتى 9 مساءً")
+            st.stop()
 
-        else:
-            c.execute(
-                "SELECT 1 FROM bookings WHERE date=? AND time=?",
-                (str(date_selected), str(time_selected))
-            )
+        # 🔒 قفل قاعدة البيانات
+        c.execute("""
+            SELECT 1 FROM bookings
+            WHERE date = ? AND time = ?
+        """, (str(date_selected), str(time_selected)))
 
-            if c.fetchone():
-                st.error("❌ هذا الموعد محجوز بالفعل")
-            else:
-                c.execute(
-                    "INSERT INTO bookings (name, phone, service, date, time) VALUES (?,?,?,?,?)",
-                    (name, phone, service, str(date_selected), str(time_selected))
-                )
-                conn.commit()
-                st.success("✅ تم حجز الموعد بنجاح")
+        if c.fetchone():
+            st.error("❌ هذا الموعد محجوز بالفعل")
+            st.stop()
+
+        # ✅ تسجيل مضمون
+        c.execute("""
+            INSERT INTO bookings (name, phone, service, date, time)
+            VALUES (?, ?, ?, ?, ?)
+        """, (name.strip(), phone.strip(), service, str(date_selected), str(time_selected)))
+
+        conn.commit()
+        st.success("✅ تم حجز الموعد بنجاح")
 
 # ================= عرض الحجوزات =================
 elif menu == "عرض الحجوزات":
     password = st.text_input("كلمة المرور", type="password")
 
     if password == "admin123":
-        c.execute(
-            "SELECT name, phone, service, date, time FROM bookings ORDER BY date, time"
-        )
+        c.execute("""
+            SELECT name, phone, service, date, time
+            FROM bookings
+            ORDER BY date, time
+        """)
         rows = c.fetchall()
 
         if rows:
