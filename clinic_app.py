@@ -1,0 +1,142 @@
+import streamlit as st
+from datetime import datetime, date as dt_date, time as dt_time
+import sqlite3
+import streamlit.components.v1 as components
+
+# ---------------- إعداد قاعدة البيانات ----------------
+conn = sqlite3.connect("clinic_bookings.db", check_same_thread=False)
+c = conn.cursor()
+
+c.execute('''
+CREATE TABLE IF NOT EXISTS bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    phone TEXT,
+    service TEXT,
+    date TEXT,
+    time TEXT
+)
+''')
+conn.commit()
+
+# ---------------- إعداد الصفحة ----------------
+st.set_page_config(page_title="عيادة الدكتورة ياسمين عبدالرحمن", layout="wide")
+
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(to bottom, #1E1E2F, #2C2C44);
+    color: white;
+    font-family: 'Arial', sans-serif;
+}
+.header {
+    color: #FFD700;
+    font-size:50px;
+    font-weight:bold;
+    text-align:center;
+    text-shadow: 2px 2px 4px #000000;
+    margin-bottom:10px;
+}
+.subheader {
+    color: #00CED1;
+    font-size:28px;
+    font-weight:bold;
+    text-align:center;
+    margin-bottom:10px;
+}
+.info-text {
+    color: #FFFFFF;
+    font-size:18px;
+    text-align:center;
+    margin-bottom:30px;
+}
+.box {
+    background: linear-gradient(135deg, #6A5ACD, #00CED1);
+    border-radius: 25px;
+    padding: 50px;
+    margin: 20px auto;
+    max-width: 700px;
+    font-size:32px;
+    font-weight:bold;
+    color: #FFFFFF;
+    text-align:center;
+    box-shadow: 5px 5px 20px #000000;
+}
+.service-box {
+    border-radius: 15px;
+    padding: 15px;
+    margin: 10px auto;
+    max-width: 700px;
+    font-size:20px;
+    font-weight:bold;
+    color:#FFFFFF;
+    text-align:center;
+    box-shadow: 3px 3px 15px #000000;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------- الهيدر ----------------
+st.markdown("<div class='header'>🩺 عيادة الدكتورة ياسمين عبدالرحمن</div>", unsafe_allow_html=True)
+st.markdown("<div class='subheader'>أخصائي الباطنة والسكر</div>", unsafe_allow_html=True)
+st.markdown("<div class='info-text'>📍 الموقع: سرس الليان - كوبرى المرور<br>📞 رقم التواصل: 01111077824</div>", unsafe_allow_html=True)
+
+# ---------------- التنقل ----------------
+menu = st.sidebar.selectbox("القائمة", ["الرئيسية", "حجز موعد", "عرض الحجوزات"])
+
+# ---------------- الرئيسية ----------------
+if menu == "الرئيسية":
+    st.markdown("<div class='box'>احجز الآن لتحصل على أفضل رعاية صحية 💚</div>", unsafe_allow_html=True)
+
+# ---------------- حجز موعد ----------------
+elif menu == "حجز موعد":
+    st.header("📅 حجز موعد")
+
+    components.html("""
+    <form autocomplete="off">
+        <input name="name" autocomplete="off">
+        <input name="phone" autocomplete="off">
+    </form>
+    """, height=0)
+
+    name = st.text_input("الاسم", key="name_clean")
+    phone = st.text_input("رقم الهاتف", key="phone_clean")
+    service = st.selectbox("الخدمة", ["استشارة باطنة", "متابعة سكر", "تحاليل وفحوصات"])
+    date_selected = st.date_input("التاريخ", dt_date.today())
+    time_selected = st.time_input("الوقت")
+
+    if st.button("حجز الآن"):
+        if not name or not phone:
+            st.error("من فضلك اكمل البيانات")
+        elif not (dt_time(16,0) <= time_selected <= dt_time(21,0)):
+            st.error("الحجز من 4 العصر لـ 9 مساءً")
+        else:
+            c.execute("SELECT * FROM bookings WHERE date=? AND time=?", (str(date_selected), str(time_selected)))
+            if c.fetchone():
+                st.error("المعاد ده محجوز")
+            else:
+                c.execute("INSERT INTO bookings (name, phone, service, date, time) VALUES (?,?,?,?,?)",
+                          (name, phone, service, str(date_selected), str(time_selected)))
+                conn.commit()
+                st.success("✅ تم الحجز بنجاح")
+
+# ---------------- عرض الحجوزات ----------------
+elif menu == "عرض الحجوزات":
+    components.html("""
+    <form autocomplete="off">
+        <input name="password" autocomplete="off">
+    </form>
+    """, height=0)
+
+    password = st.text_input("كلمة المرور", type="password", key="pass_clean")
+
+    if password == "admin123":
+        c.execute("SELECT * FROM bookings ORDER BY date, time")
+        rows = c.fetchall()
+
+        if rows:
+            for r in rows:
+                color = "#6A5ACD" if r[3] == "استشارة باطنة" else "#20B2AA" if r[3] == "متابعة سكر" else "#FF4500"
+                st.markdown(f"<div class='service-box' style='background:{color}'>{r[1]} | {r[2]} | {r[3]} | {r[4]} | {r[5]}</div>", unsafe_allow_html=True)
+        else:
+            st.info("لا توجد حجوزات")
