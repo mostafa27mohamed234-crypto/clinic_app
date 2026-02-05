@@ -31,18 +31,18 @@ st.set_page_config(
     layout="wide"
 )
 
-# ================= الستايل الطبي الخرافي (النظيف) =================
+# ================= الستايل الطبي الأصلي + إخفاء العلامات =================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Play&display=swap');
 
-/* ✅ إخفاء الفورك وعلامة جيت هاب والديبوي */
+/* ✅ إخفاء الفورك وعلامة جيت هاب والديبوي فقط */
 header[data-testid="stHeader"] {visibility: hidden;}
 .stDeployButton {display:none;}
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 
-/* الخلفية الطبية */
+/* الخلفية الطبية الأصلية */
 .stApp {
     background: linear-gradient(135deg, #1A2A3A, #0A1520); 
     font-family: 'Cairo', sans-serif;
@@ -65,7 +65,7 @@ footer {visibility: hidden;}
     flex-wrap: wrap;
 }
 
-/* الصورة الدائرية المثالية */
+/* صورة الطبيبة الدائرية */
 .doctor-hero-photo {
     width: 180px;
     height: 180px;
@@ -82,13 +82,13 @@ footer {visibility: hidden;}
     text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
 }
 
-/* الكروت والأزرار */
-div[data-testid="stForm"] {
-    background: rgba(255, 255, 255, 0.07) !important;
-    border-radius: 20px !important;
-    border: 1px solid rgba(0, 191, 255, 0.2) !important;
+/* تصميم القائمة الجانبية (الأزرار اللي طلبتها) */
+section[data-testid="stSidebar"] {
+    background: #0A1520 !important;
+    border-right: 1px solid rgba(0, 191, 255, 0.2);
 }
 
+/* تصميم الأزرار */
 .stButton > button {
     background: linear-gradient(45deg, #00BFFF, #007FFF) !important;
     color: white !important;
@@ -119,58 +119,67 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ================= القائمة الجانبية =================
-st.sidebar.markdown("<h3 style='color:#FFD700; text-align:center;'>لوحة التحكم ⚕️</h3>", unsafe_allow_html=True)
-menu = st.sidebar.radio("اختر القسم", ["🏠 الرئيسية", "📅 حجز موعد", "📋 عرض الحجوزات", "💡 نصائح صحية"])
+# ================= القائمة الجانبية (الأزرار المطلوبة) =================
+st.sidebar.markdown("<h3 style='color:#FFD700; text-align:center;'>القائمة الرئيسية ⚕️</h3>", unsafe_allow_html=True)
+menu = st.sidebar.radio("اختر الوجهة:", ["🏠 الصفحة الرئيسية", "📅 حجز موعد جديد", "📋 لوحة الحجوزات", "💡 نصائح العيادة"])
+st.sidebar.markdown("---")
 st.sidebar.info("🕒 مواعيد العمل:\n\nيومياً من الساعة 4:00 عصراً حتى 9:00 مساءً\n(ما عدا يوم الجمعة إجازة).")
 
-# ================= المحتوى الرئيسي =================
+# ================= الأقسام =================
 
-if menu == "🏠 الرئيسية":
-    st.markdown("<h2 style='text-align:center;'>خدماتنا المميزة 🌟</h2>", unsafe_allow_html=True)
+# 1. الصفحة الرئيسية
+if menu == "🏠 الصفحة الرئيسية":
+    st.markdown("<h2 style='text-align:center;'>مرحباً بكم في عيادتنا 🌟</h2>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown("<div style='background:rgba(0,191,255,0.05); padding:20px; border-radius:15px; border-left: 3px solid #00BFFF;'><h4>💉 استشارات باطنة</h4><p>تشخيص دقيق لأمراض الجهاز الهضمي والقلب والكلى.</p></div>", unsafe_allow_html=True)
     with col2:
-        st.markdown("<div style='background:rgba(0,191,255,0.05); padding:20px; border-radius:15px; border-left: 3px solid #00BFFF;'><h4>🩸 متابعة السكر</h4><p>برامج متكاملة لمتابعة مستويات السكر وخطط علاجية.</p></div>", unsafe_allow_html=True)
+        st.markdown("<div style='background:rgba(0,191,255,0.05); padding:20px; border-radius:15px; border-left: 3px solid #00BFFF;'><h4>🩸 متابعة السكر</h4><p>متابعة مستمرة لمرضى السكر بأحدث البروتوكولات.</p></div>", unsafe_allow_html=True)
     with col3:
-        st.markdown("<div style='background:rgba(0,191,255,0.05); padding:20px; border-radius:15px; border-left: 3px solid #00BFFF;'><h4>🦶 القدم السكري</h4><p>فحص شامل للوقاية من المضاعفات وتوفير الرعاية.</p></div>", unsafe_allow_html=True)
+        st.markdown("<div style='background:rgba(0,191,255,0.05); padding:20px; border-radius:15px; border-left: 3px solid #00BFFF;'><h4>🦶 القدم السكري</h4><p>فحص وقائي شامل لمرضى السكر للحماية من المضاعفات.</p></div>", unsafe_allow_html=True)
 
-elif menu == "📅 حجز موعد":
-    st.markdown("<h2 style='text-align:center;'>احجز موعدك الآن بكل سهولة 📅</h2>", unsafe_allow_html=True)
+# 2. خانة الحجز
+elif menu == "📅 حجز موعد جديد":
+    st.markdown("<h2 style='text-align:center;'>تأكيد حجز موعد 📅</h2>", unsafe_allow_html=True)
     with st.form("medical_booking"):
         col1, col2 = st.columns(2)
-        name = col1.text_input("الاسم بالكامل", placeholder="الاسم ثلاثي")
-        phone = col2.text_input("رقم الهاتف (للتواصل)", placeholder="مثال: 01xxxxxxxxx")
-        service = st.selectbox("اختر نوع الخدمة", ["كشف باطنة عام", "متابعة سكر", "فحص قدم سكري", "استشارة"])
+        name = col1.text_input("اسم المريض", placeholder="الاسم بالكامل")
+        phone = col2.text_input("رقم الموبايل", placeholder="01xxxxxxxxx")
+        service = st.selectbox("نوع الكشف", ["كشف باطنة", "متابعة سكر", "فحص قدم سكري", "استشارة"])
         col3, col4 = st.columns(2)
-        date_selected = col3.date_input("تاريخ الحضور", min_value=TODAY)
-        time_selected = col4.time_input("الوقت المفضل")
-        submit_button = st.form_submit_button("تأكيد الحجز 🌟")
+        date_selected = col3.date_input("اختر التاريخ", min_value=TODAY)
+        time_selected = col4.time_input("اختر الوقت")
+        
+        submit_button = st.form_submit_button("تأكيد الحجز الآن 🌟")
 
         if submit_button:
-            if not name.strip() or not phone.strip():
-                st.error("⚠️ من فضلك املأ البيانات.")
+            if not name or not phone:
+                st.error("⚠️ برجاء إدخال الاسم ورقم الهاتف.")
             else:
                 c.execute("INSERT INTO bookings (name, phone, service, date, time) VALUES (?, ?, ?, ?, ?)",
-                          (name.strip(), phone.strip(), service, str(date_selected), str(time_selected)))
+                          (name, phone, service, str(date_selected), str(time_selected)))
                 conn.commit()
-                progress_text = "جاري تأكيد الحجز..."
-                my_bar = st.progress(0, text=progress_text)
-                for p in range(100):
+                # شريط التقدم (البروجرس بار)
+                progress_bar = st.progress(0)
+                for percent_complete in range(100):
                     st_time.sleep(0.01)
-                    my_bar.progress(p + 1, text=progress_text)
-                st.success(f"✅ تم تأكيد حجزك بنجاح!")
+                    progress_bar.progress(percent_complete + 1)
+                st.success(f"✅ تم تسجيل الحجز بنجاح يا {name}")
                 st.balloons()
 
-elif menu == "📋 عرض الحجوزات":
-    pwd = st.text_input("كلمة سر المسؤول", type="password")
+# 3. عرض الحجوزات (للمسؤول)
+elif menu == "📋 لوحة الحجوزات":
+    st.markdown("<h2 style='text-align:center;'>سجل الحجوزات اليومية 📋</h2>", unsafe_allow_html=True)
+    pwd = st.text_input("أدخل كلمة المرور للمشاهدة", type="password")
     if pwd == "admin123":
-        data = pd.read_sql("SELECT name, phone, service, date, time FROM bookings", conn)
-        st.dataframe(data, use_container_width=True)
+        df = pd.read_sql("SELECT name as 'الاسم', phone as 'الهاتف', service as 'الخدمة', date as 'التاريخ', time as 'الوقت' FROM bookings", conn)
+        st.table(df)
+    elif pwd:
+        st.error("❌ كلمة المرور غير صحيحة")
 
-elif menu == "💡 نصائح صحية":
-    st.markdown("<div style='background:rgba(255,255,255,0.05); padding:25px; border-radius:20px; border-left: 4px solid #FFD700;'><h3>💎 حافظ على صحتك</h3><p>شرب الماء بانتظام يحسن وظائف الجسم.</p></div>", unsafe_allow_html=True)
+# 4. النصائح
+elif menu == "💡 نصائح العيادة":
+    st.info("💡 نصيحة اليوم: شرب كميات كافية من الماء يحسن من كفاءة الدورة الدموية بشكل كبير.")
 
 # ================= الفوتر =================
 st.markdown(f"""
