@@ -2,181 +2,128 @@ import streamlit as st
 from datetime import datetime, date, time
 import sqlite3
 import pandas as pd
-import time as st_time
 
-# ================= DATABASE SETUP =================
+# ================= DATABASE =================
 conn = sqlite3.connect("clinic_bookings.db", check_same_thread=False)
 c = conn.cursor()
-c.execute("""
-CREATE TABLE IF NOT EXISTS bookings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    service TEXT,
-    date TEXT,
-    time TEXT
-)
-""")
+c.execute("CREATE TABLE IF NOT EXISTS bookings (id INTEGER PRIMARY KEY, name TEXT, phone TEXT, service TEXT, date TEXT, time TEXT)")
 conn.commit()
 
-# ================= PAGE CONFIG =================
-st.set_page_config(
-    page_title="Dr. Yasmine Clinic",
-    page_icon="⚕️",
-    layout="wide"
-)
+# ================= CONFIG =================
+st.set_page_config(page_title="Dr. Yasmine Clinic", page_icon="⚕️", layout="wide")
 
-# ================= LUXURY UI STYLING =================
+# ================= SESSION STATE (FOR NAVIGATION) =================
+if 'page' not in st.session_state:
+    st.session_state.page = "🏠 Home"
+
+def change_page(page_name):
+    st.session_state.page = page_name
+
+# ================= CSS (THE LUXURY GLOW) =================
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap');
-
-/* Hide Streamlit Default Elements */
 header[data-testid="stHeader"] {visibility: hidden;}
 .stDeployButton {display:none;}
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
+.stApp { background: #020617; font-family: 'Poppins', sans-serif; color: white; }
 
-/* Background & Global Font */
-.stApp {
-    background: #0f172a;
-    font-family: 'Poppins', sans-serif;
-    color: #f8fafc;
-}
-
-/* Luxury Hero Section */
-.hero-box {
-    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    border-radius: 40px;
-    padding: 50px;
-    margin-bottom: 40px;
+/* صورة الطبيبة الدائرية */
+.doctor-container {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    backdrop-filter: blur(20px);
+    justify-content: center;
+    margin-bottom: 20px;
 }
-
-.doctor-img {
+.doctor-circle {
     width: 250px;
     height: 250px;
-    border-radius: 50%;
-    border: 5px solid #38bdf8;
+    border-radius: 50% !important; /* دايرة مثالية */
     object-fit: cover;
-    box-shadow: 0 0 40px rgba(56, 189, 248, 0.4);
+    border: 5px solid #38bdf8;
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.6);
 }
 
-.hero-text h1 {
-    font-size: 55px !important;
-    font-weight: 800 !important;
-    color: #38bdf8 !important;
-    margin-bottom: 5px;
-}
+.hero-section { text-align: center; padding: 40px; }
+.hero-section h1 { font-size: 60px; color: #38bdf8; font-weight: 800; }
 
-.hero-text p {
-    font-size: 22px;
-    color: #94a3b8;
-}
-
-/* Interaction Cards */
-.nav-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 20px;
-    padding: 30px;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: 0.3s;
-}
-.nav-card:hover {
-    transform: translateY(-10px);
-    border-color: #38bdf8;
-    background: rgba(56, 189, 248, 0.1);
-}
-
-/* Sidebar Styling */
-[data-testid="stSidebar"] {
-    background-color: #020617 !important;
-}
-
-/* Button Styling */
+/* تصميم زرار الحجز العملاق */
 .stButton > button {
-    background: #38bdf8 !important;
-    color: #020617 !important;
+    background: linear-gradient(90deg, #38bdf8, #6366f1) !important;
+    color: white !important;
+    font-size: 24px !important;
     font-weight: bold !important;
-    border-radius: 12px !important;
-    height: 50px !important;
+    border-radius: 50px !important;
+    padding: 15px 50px !important;
+    border: none !important;
+    display: block;
+    margin: 0 auto;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ================= SIDEBAR =================
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/387/387561.png", width=100)
-st.sidebar.title("Navigation")
-menu = st.sidebar.radio("Navigate to:", ["🏠 Home", "📅 Booking", "📋 Admin Panel", "💡 Health Tips"])
+st.sidebar.title("🏥 Clinic Menu")
+choice = st.sidebar.radio("Navigate", ["🏠 Home", "📅 Booking", "📋 Admin", "💡 Tips"], index=0 if st.session_state.page == "🏠 Home" else 1)
+
+# Sync sidebar with session state
+if choice != st.session_state.page:
+    st.session_state.page = choice
 
 # ================= HOME PAGE =================
-if menu == "🏠 Home":
-    # Hero Section with Female Doctor Image
-    st.markdown(f"""
-    <div class="hero-box">
-        <div class="hero-text">
-            <h1>Dr. Yasmine Abdelrahman</h1>
-            <p>Internal Medicine & Diabetes Specialist</p>
-            <div style="margin-top:20px; font-size:16px;">
-                📍 Sirs Al-Layan - Traffic Bridge<br>
-                📞 Contact: 01111077824
-            </div>
-        </div>
-        <img src="https://img.freepik.com/free-photo/pleased-young-female-doctor-wearing-medical-gown-with-stethoscope-around-neck-standing-with-folded-arms-isolated-white-background_141793-58707.jpg" class="doctor-img">
+if st.session_state.page == "🏠 Home":
+    st.markdown('<div class="hero-section">', unsafe_allow_html=True)
+    
+    # الصورة الدائرية
+    st.markdown("""
+    <div class="doctor-container">
+        <img src="https://img.freepik.com/free-photo/pleased-young-female-doctor-wearing-medical-gown-with-stethoscope-around-neck-standing-with-folded-arms-isolated-white-background_141793-58707.jpg" class="doctor-circle">
     </div>
     """, unsafe_allow_html=True)
-
-    # Quick Access Grid
-    st.markdown("<h2 style='text-align:center;'>Welcome to Our Clinic</h2>", unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
     
-    with c1:
-        st.markdown("<div class='nav-card'><h3>💉</h3><h4>General Medicine</h4><p>High-quality diagnostic services.</p></div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown("<div class='nav-card'><h3>🩸</h3><h4>Diabetes Follow-up</h4><p>Stay healthy with regular checks.</p></div>", unsafe_allow_html=True)
-    with c3:
-        st.markdown("<div class='nav-card'><h3>🦶</h3><h4>Diabetic Foot</h4><p>Professional prevention & care.</p></div>", unsafe_allow_html=True)
+    st.markdown("<h1>Dr. Yasmine Abdelrahman</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:24px; color:#94a3b8;'>Internal Medicine & Diabetes Expert</p>", unsafe_allow_html=True)
+    
+    # زرار الحجز اللي بيفتح الصفحة
+    st.write("---")
+    if st.button("🚀 BOOK YOUR APPOINTMENT NOW"):
+        st.session_state.page = "📅 Booking"
+        st.rerun()
+    st.write("---")
 
 # ================= BOOKING PAGE =================
-elif menu == "📅 Booking":
-    st.markdown("<h1 style='text-align:center;'>Schedule an Appointment</h1>", unsafe_allow_html=True)
+elif st.session_state.page == "📅 Booking":
+    st.markdown("<h1 style='text-align:center; color:#38bdf8;'>📅 Appointment Form</h1>", unsafe_allow_html=True)
     with st.form("booking_form"):
-        name = st.text_input("Full Name")
-        phone = st.text_input("Phone Number")
-        service = st.selectbox("Service", ["Checkup", "Diabetes Care", "Consultation"])
-        b_date = st.date_input("Select Date", min_value=date.today())
-        b_time = st.time_input("Select Time")
+        name = st.text_input("Patient Full Name")
+        phone = st.text_input("Mobile Number")
+        service = st.selectbox("Service", ["General Medicine", "Diabetes Follow-up", "Foot Care"])
+        b_date = st.date_input("Visit Date")
+        b_time = st.time_input("Visit Time")
         
-        if st.form_submit_button("Confirm Booking"):
+        if st.form_submit_button("Confirm Booking ✅"):
             if name and phone:
                 c.execute("INSERT INTO bookings (name, phone, service, date, time) VALUES (?,?,?,?,?)",
                           (name, phone, service, str(b_date), str(b_time)))
                 conn.commit()
-                st.success("Appointment confirmed! See you soon.")
+                st.success("🎉 Appointment Registered Successfully!")
                 st.balloons()
             else:
-                st.error("Please fill all fields.")
+                st.error("Missing Data!")
 
-# ================= ADMIN PANEL =================
-elif menu == "📋 Admin Panel":
-    st.markdown("<h1>Admin Access</h1>", unsafe_allow_html=True)
-    pwd = st.text_input("Password", type="password")
+# ================= ADMIN =================
+elif st.session_state.page == "📋 Admin":
+    pwd = st.text_input("Admin Password", type="password")
     if pwd == "admin123":
         df = pd.read_sql("SELECT * FROM bookings", conn)
         st.dataframe(df, use_container_width=True)
 
 # ================= TIPS =================
-elif menu == "💡 Health Tips":
-    st.info("💡 Keep your blood sugar stable by walking 30 minutes daily.")
+elif st.session_state.page == "💡 Tips":
+    st.info("Stay Healthy: Drink 3L of water and walk 30 mins a day!")
 
 # ================= FOOTER =================
 st.markdown(f"""
-<div style='text-align:center; padding:30px; color:#64748b; border-top:1px solid rgba(255,255,255,0.1); margin-top:50px;'>
-    Developed by <b>Eng. Mostafa El-Fishawy</b> ⚡ 2024
+<div style='text-align:center; padding:30px; color:#64748b; margin-top:50px;'>
+    Developed by <b>Eng. Mostafa El-Fishawy</b> ⚡ 2026
 </div>
 """, unsafe_allow_html=True)
