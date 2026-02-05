@@ -2,14 +2,16 @@ import streamlit as st
 from datetime import datetime, date, time
 import sqlite3
 import pandas as pd
-import time as st_time
+import time as st_time # لتجنب تضارب الاسم مع datetime.time
 
-# ================= 1. إعدادات الوقت وقاعدة البيانات =================
+# ================= الوقت الحقيقي =================
 NOW = datetime.now()
 TODAY = NOW.date()
 
+# ================= قاعدة البيانات =================
 conn = sqlite3.connect("clinic_bookings.db", check_same_thread=False)
 c = conn.cursor()
+
 c.execute("""
 CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,169 +24,212 @@ CREATE TABLE IF NOT EXISTS bookings (
 """)
 conn.commit()
 
-# ================= 2. إعداد الصفحة والستايل =================
+# ================= إعداد الصفحة =================
 st.set_page_config(
     page_title="عيادة الدكتورة ياسمين عبد الرحمن",
     page_icon="⚕️", 
     layout="wide"
 )
 
+# ================= الستايل الطبي الخرافي (مع إخفاء الفورك وعلامة جيت هاب) =================
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Play&display=swap');
 
-/* إخفاء العناصر العلوية المزعجة */
+/* ✅ الجزء الخاص بإخفاء الفورك وعلامة جيت هاب والديبوي */
 header[data-testid="stHeader"] {visibility: hidden;}
 .stDeployButton {display:none;}
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
+/* ------------------------------------------- */
 
-/* الخلفية العامة */
+/* الخلفية الطبية المتدرجة */
 .stApp {
-    background: linear-gradient(135deg, #0f172a, #1e293b);
+    background: linear-gradient(135deg, #1A2A3A, #0A1520); 
     font-family: 'Cairo', sans-serif;
-    color: #f1f5f9;
+    color: #E0E0E0;
+    background-attachment: fixed;
 }
 
-/* هيدر الصفحة الرئيسي */
-.main-hero {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    border-radius: 30px;
-    padding: 40px;
-    margin-bottom: 30px;
+.stApp::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: url('https://www.transparenttextures.com/patterns/micro-carbon.png');
+    opacity: 0.1;
+    z-index: -1;
+}
+
+/* الهيدر الرئيسي - لوحة معلومات الأطباء */
+.doctor-hero-header {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 30px;
+    margin-bottom: 40px;
+    border: 2px solid #00BFFF;
+    box-shadow: 0 10px 40px rgba(0, 191, 255, 0.3);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    justify-content: space-around;
+    flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
 }
 
-.hero-text h1 {
-    font-size: 45px !important;
-    color: #fbbf24 !important;
-    font-weight: 900 !important;
-    margin-bottom: 5px;
+.doctor-hero-info {
+    text-align: right;
+    flex-grow: 1;
+    padding-right: 20px;
 }
 
-/* الصورة الدائرية (لوز اللوز) */
-.profile-pic {
-    width: 200px;
-    height: 200px;
-    border-radius: 50% !important;
-    border: 5px solid #38bdf8;
+.doctor-hero-photo {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
     object-fit: cover;
-    box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+    border: 5px solid #00BFFF;
+    box-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
 }
 
-/* كروت الخدمات */
-.service-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-right: 5px solid #38bdf8;
-    padding: 20px;
-    border-radius: 15px;
-    margin-bottom: 15px;
+.doctor-name-main {
+    font-family: 'Play', sans-serif;
+    font-size: 55px;
+    font-weight: bold;
+    color: #FFD700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    line-height: 1.2;
 }
 
-/* القائمة الجانبية */
-[data-testid="stSidebar"] {
-    background-color: #020617 !important;
+.doctor-specialty {
+    font-size: 30px;
+    color: #00BFFF;
+    margin-top: 5px;
 }
+
+.doctor-contact-details {
+    font-size: 20px;
+    color: #E0E0E0;
+    margin-top: 15px;
+}
+
+/* الكروت */
+div[data-testid="stForm"], .st-emotion-cache-12w0qpk {
+    background: rgba(255, 255, 255, 0.07) !important;
+    backdrop-filter: blur(18px) !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(0, 191, 255, 0.2) !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5) !important;
+}
+
+h1, h2, h3, h4 { color: #FFD700; font-weight: bold; }
+
+/* الأزرار */
+.stButton > button {
+    background: linear-gradient(45deg, #00BFFF, #007FFF) !important;
+    color: white !important;
+    border-radius: 10px !important;
+    font-weight: bold !important;
+    height: 50px !important;
+    width: 100% !important;
+}
+
+/* القائمة الجانبية (Sidebar) */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0A1520, #1A2A3A) !important;
+    border-right: 1px solid rgba(0, 191, 255, 0.2);
+}
+
+.footer-signature {
+    text-align: center;
+    padding: 25px;
+    margin-top: 50px;
+    border-top: 1px solid rgba(0, 191, 255, 0.2);
+    color: #999999;
+}
+.footer-signature b { color: #00BFFF; }
 </style>
 """, unsafe_allow_html=True)
 
-# ================= 3. الهيدر (واجهة العيادة) =================
+# ================= الهيدر الرئيسي =================
 st.markdown(f"""
-<div class="main-hero">
-    <div class="hero-text" style="text-align: right;">
-        <h1>عيادة الدكتورة ياسمين عبد الرحمن</h1>
-        <p style="color: #38bdf8; font-size: 24px; font-weight: bold;">أخصائي الباطنة والسكر والقدم السكري</p>
-        <p style="color: #94a3b8;">📍 سرس الليان - كوبرى المرور | 📞 01111077824</p>
+<div class='doctor-hero-header'>
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_x1p7jP6s_bS0S4D5dY3D7Y_oJ0Q2_M7x7Q&s" class='doctor-hero-photo' alt='Doctor Yasmine Photo'>
+    <div class='doctor-hero-info'>
+        <div class='doctor-name-main'>عيادة الدكتورة ياسمين عبد الرحمن</div>
+        <div class='doctor-specialty'>أخصائي الباطنة والسكر والقدم السكري</div>
+        <div class='doctor-contact-details'>📍 سرس الليان - كوبرى المرور | 📞 01111077824</div>
     </div>
-    <img src="https://img.freepik.com/free-photo/female-doctor-hospital-with-stethoscope_23-2148827701.jpg" class="profile-pic">
 </div>
 """, unsafe_allow_html=True)
 
-# ================= 4. القائمة الجانبية (التحكم الكامل) =================
-st.sidebar.markdown("<h2 style='text-align:center; color:#fbbf24;'>لوحة التحكم ⚕️</h2>", unsafe_allow_html=True)
-menu = st.sidebar.radio(
-    "انتقل إلى:",
-    ["🏠 الصفحة الرئيسية", "📅 حجز موعد جديد", "📋 كشف الحجوزات", "💡 نصائح طبية"],
-    key="nav"
-)
+# ================= القائمة الجانبية (تم التأكد من استعادتها بالكامل) =================
+st.sidebar.markdown("<h3 style='color:#FFD700; text-align:center;'>لوحة التحكم ⚕️</h3>", unsafe_allow_html=True)
+menu = st.sidebar.radio("اختر القسم", 
+                        ["🏠 الرئيسية", "📅 حجز موعد", "📋 عرض الحجوزات", "💡 نصائح صحية"], 
+                        index=0, key="main_sidebar")
+
 st.sidebar.markdown("---")
-st.sidebar.markdown("""
-<div style='text-align:center; color:#94a3b8;'>
-    <b>🕒 مواعيد العمل</b><br>
-    يومياً: 4:00 م - 9:00 م<br>
-    الجمعة إجازة
-</div>
-""", unsafe_allow_html=True)
+st.sidebar.info("🕒 مواعيد العمل:\n\nيومياً من الساعة 4:00 عصراً حتى 9:00 مساءً\n(ما عدا يوم الجمعة إجازة).")
 
-# ================= 5. تنفيذ الصفحات =================
+# ================= المحتوى الرئيسي =================
 
-# --- الصفحة الرئيسية ---
-if menu == "🏠 الصفحة الرئيسية":
-    st.markdown("<h2 style='text-align:right;'>خدماتنا الرائدة 🌟</h2>", unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("<div class='service-card'><h3 style='color:#38bdf8;'>💉 باطنة عامة</h3><p>تشخيص ومتابعة كافة أمراض الباطنة بأحدث الأجهزة.</p></div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown("<div class='service-card'><h3 style='color:#38bdf8;'>🩸 رعاية السكر</h3><p>تنظيم مستويات السكر ووضع برامج غذائية متكاملة.</p></div>", unsafe_allow_html=True)
-    with c3:
-        st.markdown("<div class='service-card'><h3 style='color:#38bdf8;'>🦶 القدم السكري</h3><p>عناية خاصة وفحص دوري لحماية القدم من المضاعفات.</p></div>", unsafe_allow_html=True)
+# 🏠 الرئيسية
+if menu == "🏠 الرئيسية":
+    st.markdown("<h2 style='text-align:center;'>خدماتنا المميزة 🌟</h2>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("<div style='background:rgba(0,191,255,0.05); padding:20px; border-radius:15px; border-left: 3px solid #00BFFF;'><h4 style='color:#00BFFF;'>💉 استشارات باطنة</h4><p>نقدم تشخيصاً دقيقاً وعلاجاً فعالاً لأمراض الجهاز الهضمي والقلب والكلى.</p></div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div style='background:rgba(0,191,255,0.05); padding:20px; border-radius:15px; border-left: 3px solid #00BFFF;'><h4 style='color:#00BFFF;'>🩸 متابعة حالات السكر</h4><p>برامج متكاملة لمتابعة مستويات السكر وضع خطط علاجية وتغذوية.</p></div>", unsafe_allow_html=True)
+    with col3:
+        st.markdown("<div style='background:rgba(0,191,255,0.05); padding:20px; border-radius:15px; border-left: 3px solid #00BFFF;'><h4 style='color:#00BFFF;'>🦶 فحص القدم السكري</h4><p>فحص شامل للقدم السكري للوقاية من المضاعفات وتوفير الرعاية.</p></div>", unsafe_allow_html=True)
 
-# --- صفحة الحجز (بكل تكاتها) ---
-elif menu == "📅 حجز موعد جديد":
-    st.markdown("<h2 style='text-align:center;'>تسجيل بيانات الحجز 📝</h2>", unsafe_allow_html=True)
-    with st.form("booking_form", clear_on_submit=True):
+# 📅 حجز موعد
+elif menu == "📅 حجز موعد":
+    st.markdown("<h2 style='text-align:center;'>احجز موعدك الآن بكل سهولة 📅</h2>", unsafe_allow_html=True)
+    with st.form("medical_booking"):
         col1, col2 = st.columns(2)
-        name = col1.text_input("اسم المريض بالكامل")
-        phone = col2.text_input("رقم الهاتف للتواصل")
-        
-        service = st.selectbox("نوع الخدمة المطلوبة", ["كشف باطنة", "متابعة سكر", "فحص قدم سكري", "استشارة سريعة"])
-        
+        name = col1.text_input("الاسم بالكامل", placeholder="الاسم ثلاثي")
+        phone = col2.text_input("رقم الهاتف (للتواصل)", placeholder="مثال: 01xxxxxxxxx")
+        service = st.selectbox("اختر نوع الخدمة", ["كشف باطنة عام", "متابعة سكر", "فحص قدم سكري", "استشارة"])
         col3, col4 = st.columns(2)
-        res_date = col3.date_input("تاريخ الحجز", min_value=TODAY)
-        res_time = col4.time_input("الوقت المفضل")
-        
-        submitted = st.form_submit_button("تأكيد الحجز ومسابقة الزمن 🚀")
-        
-        if submitted:
-            if name and phone:
-                c.execute("INSERT INTO bookings (name, phone, service, date, time) VALUES (?,?,?,?,?)",
-                          (name, phone, service, str(res_date), str(res_time)))
-                conn.commit()
-                
-                # إضافة شريط التقدم اللي كان موجود
-                progress_bar = st.progress(0)
-                for i in range(100):
-                    st_time.sleep(0.01)
-                    progress_bar.progress(i + 1)
-                
-                st.success(f"تم الحجز بنجاح يا {name}! ننتظرك في الموعد.")
-                st.balloons()
+        date_selected = col3.date_input("تاريخ الحضور", min_value=TODAY)
+        time_selected = col4.time_input("الوقت المفضل")
+        submit_button = st.form_submit_button("تأكيد الحجز 🌟")
+
+        if submit_button:
+            if not name.strip() or not phone.strip():
+                st.error("⚠️ من فضلك، املأ جميع الحقول المطلوبة.")
+            elif not (st_time.time(16, 0) <= time_selected <= st_time.time(21, 0)):
+                st.error("❌ مواعيد الحجز من 4 عصراً حتى 9 مساءً فقط.")
             else:
-                st.error("من فضلك املأ الاسم ورقم التليفون أولاً!")
+                c.execute("INSERT INTO bookings (name, phone, service, date, time) VALUES (?, ?, ?, ?, ?)",
+                          (name.strip(), phone.strip(), service, str(date_selected), str(time_selected)))
+                conn.commit()
+                progress_text = "جاري تأكيد الحجز..."
+                my_bar = st.progress(0, text=progress_text)
+                for p in range(100):
+                    st_time.sleep(0.01)
+                    my_bar.progress(p + 1, text=progress_text)
+                st.success(f"✅ تم تأكيد حجزك بنجاح!")
+                st.balloons()
 
-# --- صفحة الإدارة ---
-elif menu == "📋 كشف الحجوزات":
-    st.markdown("<h2 style='text-align:center;'>سجل الحجوزات 🔐</h2>", unsafe_allow_html=True)
-    password = st.text_input("كلمة مرور الإدارة", type="password")
-    if password == "admin123":
-        df = pd.read_sql("SELECT name, phone, service, date, time FROM bookings ORDER BY date DESC", conn)
-        st.dataframe(df, use_container_width=True)
-    elif password:
-        st.error("كلمة المرور غير صحيحة!")
+# 📋 عرض الحجوزات
+elif menu == "📋 عرض الحجوزات":
+    st.markdown("<h2 style='text-align:center;'>لوحة إدارة الحجوزات 🔐</h2>", unsafe_allow_html=True)
+    pwd = st.text_input("كلمة سر المسؤول", type="password")
+    if pwd == "admin123":
+        data = pd.read_sql("SELECT name as 'المريض', phone as 'الهاتف', service as 'الخدمة', date as 'التاريخ', time as 'الوقت' FROM bookings", conn)
+        st.dataframe(data, use_container_width=True)
 
-# --- صفحة النصائح ---
-elif menu == "💡 نصائح طبية":
-    st.success("🍏 نصيحة اليوم: المشي لمدة 30 دقيقة يومياً يقلل من مخاطر مضاعفات السكر بنسبة 40%.")
-    st.info("💧 اشرب ما لا يقل عن 8 أكواب ماء يومياً للحفاظ على سلامة الكلى.")
+# 💡 نصائح صحية
+elif menu == "💡 نصائح صحية":
+    st.markdown("<h2 style='text-align:center;'>نصائح صحية من العيادة 🩺</h2>", unsafe_allow_html=True)
+    st.markdown("<div style='background:rgba(255,255,255,0.05); padding:25px; border-radius:20px; border-left: 4px solid #FFD700;'><h3>💎 حافظ على صحتك</h3><p>شرب الماء يومياً يحسن وظائف الجسم.</p></div>", unsafe_allow_html=True)
+    st.markdown("<div style='background:rgba(255,255,255,0.05); padding:25px; border-radius:20px; border-left: 4px solid #00BFFF;'><h3>🍏 التغذية السليمة</h3><p>الوجبات المتوازنة تدعم المناعة.</p></div>", unsafe_allow_html=True)
 
-# ================= 6. الفوتر =================
+# ================= الفوتر =================
 st.markdown(f"""
-<div style='text-align:center; padding:30px; color:#64748b; border-top:1px solid rgba(255,255,255,0.05); margin-top:50px;'>
-    تم التطوير بكل حب بواسطة <b>البشمهندس مصطفى الفيشاوي</b> ⚡ 2026
-</div>
+<div class='footer-signature'>تم التطوير بواسطة <b>البشمهندس مصطفى الفيشاوي</b> ⚡ 2024</div>
 """, unsafe_allow_html=True)
